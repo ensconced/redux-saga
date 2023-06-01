@@ -1,8 +1,16 @@
 import fsmIterator, { safeName } from './fsmIterator'
 import { delay, fork, race, take } from '../io'
 
-export default function debounceHelper(delayLength, patternOrChannel, worker, ...args) {
-  let action, raceOutput
+export default function debounceHelper(delayLengthOrOptions, patternOrChannel, worker, ...args) {
+  let action, raceOutput, delayLength, leading, trailing
+
+  if (typeof delayLengthOrOptions === 'number') {
+    delayLength = delayLengthOrOptions
+    leading = false
+    trailing = true
+  } else {
+    ;({ delayLength, leading = false, trailing = true } = delayLengthOrOptions)
+  }
 
   const yTake = { done: false, value: take(patternOrChannel) }
   const yRace = {
