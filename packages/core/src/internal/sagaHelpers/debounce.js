@@ -41,11 +41,9 @@ export default function debounceHelper(delayLengthOrOptions, patternOrChannel, w
         return { nextState: 'q4', effect: yRace, stateUpdater: setRaceOutput }
       },
       q4() {
-        return raceOutput.debounce
-          ? { nextState: 'q5', effect: yNoop }
-          : { nextState: 'q3', effect: yNoop(raceOutput.action), stateUpdater: setAction }
-      },
-      q5() {
+        if (raceOutput.action) {
+          return { nextState: 'q3', effect: yNoop(raceOutput.action), stateUpdater: setAction }
+        }
         return trailing && action
           ? { nextState: 'q1', effect: yFork(action), stateUpdater: unsetAction }
           : { nextState: 'q1', effect: yNoop }
