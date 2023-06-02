@@ -24,6 +24,7 @@ export default function debounceHelper(delayLengthOrOptions, patternOrChannel, w
   const yNoop = (value) => ({ done: false, value })
 
   const setAction = (ac) => (action = ac)
+  const unsetAction = () => (action = undefined)
   const setRaceOutput = (ro) => (raceOutput = ro)
 
   return fsmIterator(
@@ -32,12 +33,22 @@ export default function debounceHelper(delayLengthOrOptions, patternOrChannel, w
         return { nextState: 'q2', effect: yTake, stateUpdater: setAction }
       },
       q2() {
-        return { nextState: 'q3', effect: yRace, stateUpdater: setRaceOutput }
+        return leading
+          ? { nextState: 'q3', effect: yFork(action), stateUpdater: unsetAction }
+          : { nextState: 'q3', effect: yNoop }
       },
       q3() {
+        return { nextState: 'q4', effect: yRace, stateUpdater: setRaceOutput }
+      },
+      q4() {
         return raceOutput.debounce
-          ? { nextState: 'q1', effect: yFork(action) }
-          : { nextState: 'q2', effect: yNoop(raceOutput.action), stateUpdater: setAction }
+          ? { nextState: 'q5', effect: yNoop }
+          : { nextState: 'q3', effect: yNoop(raceOutput.action), stateUpdater: setAction }
+      },
+      q5() {
+        return trailing && action
+          ? { nextState: 'q1', effect: yFork(action), stateUpdater: unsetAction }
+          : { nextState: 'q1', effect: yNoop }
       },
     },
     'q1',
